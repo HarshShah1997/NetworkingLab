@@ -10,6 +10,9 @@
 
 pthread_mutex_t lock;
 
+int clients[5];
+int clients_size = 0;
+
 void error(const char *msg)
 {
     perror(msg);
@@ -20,9 +23,8 @@ void *read_from_client(void *args)
 {
     int sockfd = *((int *) args);
     char buffer[256];
-    bzero(buffer, sizeof(buffer));
     while (1) {
-
+        bzero(buffer, sizeof(buffer));
         int n = read(sockfd, buffer, sizeof(buffer) - 1);
         if (n < 0) {
             error("ERROR reading from socket");
@@ -87,20 +89,12 @@ int main(int argc, char *argv[])
         if (newsockfd < 0) {
             error("ERROR on accept");
         }
-        int pid = fork();
-        if (pid < 0) {
-            error("ERROR on fork");
-        }
-        if (pid == 0) { //This is a child process
-            close(sockfd);
-            pthread_create(&tid[0], NULL, read_from_client, &newsockfd);
-            pthread_create(&tid[1], NULL, send_to_client, &newsockfd);
-            pthread_join(tid[0], NULL);
-            pthread_join(tid[1], NULL);
+        pthread_create(&tid[0], NULL, read_from_client, &newsockfd);
+        pthread_create(&tid[1], NULL, send_to_client, &newsockfd);
+        pthread_join(tid[0], NULL);
+        pthread_join(tid[1], NULL);
 
-        } else { //This is parent
-            close(newsockfd);
-        }
+
     }
     pthread_mutex_destroy(&lock);
     return 0; 

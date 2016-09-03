@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
+
+pthread_mutex_t lock;
 
 void error(char *msg) 
 {
@@ -13,24 +16,40 @@ void error(char *msg)
     exit(0);
 }
 
-void dostuff(int sockfd)
+void *send_to_server(void *args)
 {
+    int sockfd = *(int *)args;
     char buffer[256];
-    int n;
-    bzero(buffer, 256);
-    printf("> ");
-    fgets(buffer, 255, stdin);
-    n = write(sockfd, buffer, strlen(buffer));
-    if (n < 0) {
-        error("ERROR writing to socket");
+    bzero(buffer, sizeof(buffer));
+
+    while (1) {
+        fgets(buffer, sizeof(buffer) - 1, stdin);
+
+        pthread_mutex_lock(&lock);
+        int n = write(sockfd, buffer, strlen(buffer));
+        if (n < 0) {
+            error("ERROR writing to socket");
+        }
+        pthread_mutex_unlock(&lock);
     }
-    bzero(buffer, 256);
-    n = read(sockfd, buffer, 255);
-    if (n < 0) {
-        error("ERROR reading from socket");
-    }
-    printf("%s\n", buffer);
 }
+
+void *receive_from_server(void *args)
+{
+    int sockfd = *(int *)args;
+    char buffer[256];
+    bzero(buffer, sizeof(buffer));
+    while (1) {
+        int n = read(sockfd, buffer, sizeof(buffer) - 1);
+        if (n < 0) {
+            error("ERROR reading from socket");
+        }
+        pthread_mutex_lock(&lock);
+        printf("%s", buffer);
+        pthread_mutex_unlock(&lock);
+    }
+}
+
 
 
 int main(int argc, char *argv[])
@@ -58,18 +77,26 @@ int main(int argc, char *argv[])
     /*
        bcopy(char *s1, char *s2, int length)
        Copies from a string from s1 to s2 with specified length.
-    */
+     */
     bcopy((char *)server -> h_addr, 
             (char *)&serv_addr.sin_addr.s_addr, server -> h_length);
     serv_addr.sin_port = htons(portno);
+
+    if (pthread_mutex_init(&lock, NULL) != 0) {
+        error("ERROR creating mutex");
+    }
+
     if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
         error("ERROR connection");
     } else {
-        while (1) {
-            dostuff(sockfd);
-        }
+        pthread_t pid[2];
+        pthread_create(&pid[0], NULL, send_to_server, &sockfd);
+        pthread_create(&pid[1], NULL, receive_from_server, &sockfd);
+        pthread_join(pid[0], NULL);
+        pthread_join(pid[1], NULL);
     }
     close(sockfd);
+    pthread_mutex_destroy(&lock);
     return 0;
 }
 

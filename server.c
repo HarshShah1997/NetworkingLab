@@ -79,21 +79,30 @@ int main(int argc, char *argv[])
     listen(sockfd,5);
     clilen = sizeof(cli_addr);
 
-    pthread_t tid[2];
+    pthread_t tid[10];
     if (pthread_mutex_init(&lock, NULL) != 0) {
         error("ERROR Mutex initialization failed");
     }
 
     while (1) {
-        newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+        clients[clients_size] = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+        clients_size++;
         if (newsockfd < 0) {
             error("ERROR on accept");
         }
-        pthread_create(&tid[0], NULL, read_from_client, &newsockfd);
-        pthread_create(&tid[1], NULL, send_to_client, &newsockfd);
-        pthread_join(tid[0], NULL);
-        pthread_join(tid[1], NULL);
-
+        int pid = fork();
+        if (pid < 0) {
+            error("ERROR on fork");
+        }
+        if (pid == 0) { //This is child
+            close(sockfd);
+            pthread_create(&tid[clients_size - 1], NULL, read_from_client, &(clients[clients_size - 1]));
+            pthread_create(&tid[clients_size], NULL, send_to_client, &(clients[clients_size - 1]));
+            pthread_join(tid[clients_size - 1], NULL);
+            pthread_join(tid[clients_size], NULL);
+        } else {
+            close(clients[clients_size - 1]);
+        }
 
     }
     pthread_mutex_destroy(&lock);

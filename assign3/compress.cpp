@@ -147,9 +147,10 @@ void write_tree()
     for (int i = 0; i < 256; i++) {
         unsigned char x = i;
         if (huff.find(x) != huff.end()) {
-            fprintf(out, "%x %s\n", x, huff[x].c_str());
+            fprintf(out, "%d %s\n", i, huff[x].c_str());
         }
     }
+    fprintf(out, "%x %s\n", 0, "0");
     fclose(out);
 }
 

@@ -1,7 +1,7 @@
 #include <bits/stdc++.h>
 #include <unistd.h>
+#define MAX_SIZE 10000000
 using namespace std;
-
 
 class Node {
     public:
@@ -17,14 +17,20 @@ class Node {
             right = r;
         }
 };
-            
+
 typedef pair<int, Node*> pqpair;
 
 void assign(Node *currNode, string currStr);
 Node *create_tree(priority_queue< pqpair, vector<pqpair>, greater<pqpair> > pq);
 void write_tree();
+int fillBuffer(char filename[]);
+void fillOutputBuffer(size_t bytes_read);
+void writeOutput(char filename[]);
+void write_tree();
 
-unsigned char buffer[1000000];
+unsigned char buffer[MAX_SIZE];
+unsigned char output_buffer[MAX_SIZE];
+int output_buffer_size = 0;
 map< unsigned char, string > huff;
 
 void error(string msg)
@@ -38,17 +44,9 @@ int main(int argc, char *argv[])
     if (argc != 3) {
         error("Usage: compress inputfile outputfile");
     }
-    FILE *input = fopen(argv[1], "rb");
-    if (input == NULL) {
-        error("Error opening file");
-    }
 
-    size_t bytes_read;
-    bytes_read = fread(buffer, sizeof(unsigned char), sizeof(buffer), input);
-    if (bytes_read == 0) {
-        error("Error reading file");
-    }
-    fclose(input);
+    size_t bytes_read = fillBuffer(argv[1]);
+
     //cout << bytes_read << endl;
 
     map< unsigned char, int > freq;
@@ -57,11 +55,11 @@ int main(int argc, char *argv[])
     }
 
     /*for(int i = 0; i < 256; i++) {
-        if (freq[i] != 0) {
-            unsigned char x = i;
-            cout << x << " " << freq[x] << endl;
-        }
-    }*/
+      if (freq[i] != 0) {
+      unsigned char x = i;
+      cout << x << " " << freq[x] << endl;
+      }
+      }*/
 
     priority_queue< pqpair, vector<pqpair>, greater<pqpair> > pq;
 
@@ -74,40 +72,32 @@ int main(int argc, char *argv[])
     }
 
     Node *tree = create_tree(pq);
-    
+
     assign(tree, "");
 
-    unsigned char output_buffer[bytes_read];
-    int output_buffer_size = 0;
-    output_buffer[0] = 0;
-    int count = 0;
+    fillOutputBuffer(bytes_read);
 
-    for (int i = 0; i < bytes_read; i++) {
-        string temp = huff[buffer[i]];
-        for (int j = 0; j < temp.size(); j++) {
-            output_buffer[output_buffer_size] |= temp[j] - '0' << (8 - count - 1);
-            count++;
-            if (count == 8) {
-                output_buffer_size++;
-                output_buffer[output_buffer_size] = 0;
-                count = 0;
-            }
-        }
-    }
-    if (count != 0) {
-        output_buffer_size++;
-    }
-
-    FILE *out = fopen(argv[2], "wb");
-    if (out == NULL) {
-        error("Error writing to file");
-    }
-    fwrite(output_buffer, sizeof(unsigned char), output_buffer_size, out);
-    fclose(out);
+    writeOutput(argv[2]);
 
     write_tree();
 
     return 0;
+}
+
+int fillBuffer(char filename[])
+{
+    FILE *input = fopen(filename, "rb");
+    if (input == NULL) {
+        error("Error opening file");
+    }
+
+    size_t bytes_read;
+    bytes_read = fread(buffer, sizeof(unsigned char), sizeof(buffer), input);
+    if (bytes_read == 0) {
+        error("Error reading file");
+    }
+    fclose(input);
+    return bytes_read;
 }
 
 void assign(Node *currNode, string currStr)
@@ -141,6 +131,38 @@ Node *create_tree(priority_queue< pqpair, vector<pqpair>, greater<pqpair> > pq)
     return pq.top().second;
 }
 
+void fillOutputBuffer(size_t bytes_read)
+{
+    output_buffer[0] = 0;
+    int count = 0;
+
+    for (int i = 0; i < bytes_read; i++) {
+        string temp = huff[buffer[i]];
+        for (int j = 0; j < temp.size(); j++) {
+            output_buffer[output_buffer_size] |= temp[j] - '0' << (8 - count - 1);
+            count++;
+            if (count == 8) {
+                output_buffer_size++;
+                output_buffer[output_buffer_size] = 0;
+                count = 0;
+            }
+        }
+    }
+    if (count != 0) {
+        output_buffer_size++;
+    }
+}
+
+void writeOutput(char filename[])
+{
+    FILE *out = fopen(filename, "wb");
+    if (out == NULL) {
+        error("Error writing to file");
+    }
+    fwrite(output_buffer, sizeof(unsigned char), output_buffer_size, out);
+    fclose(out);
+}
+
 void write_tree()
 {
     FILE *out = fopen("tree.txt", "w");
@@ -153,6 +175,3 @@ void write_tree()
     fprintf(out, "%x %s\n", 0, "0");
     fclose(out);
 }
-
-
-

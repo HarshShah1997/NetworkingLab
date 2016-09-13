@@ -1,5 +1,6 @@
 #include <bits/stdc++.h>
 #include <unistd.h>
+#define MAX_SIZE 10000000
 using namespace std;
 
 class Node {
@@ -18,9 +19,14 @@ class Node {
 };
 
 map< string, unsigned char > unhuff;
-unsigned char buffer[10000000];
+unsigned char buffer[MAX_SIZE];
+unsigned char output_buffer[MAX_SIZE];
+int output_buffer_size = 0;
 
-void generate_tree() ;
+void generate_tree();
+int fillBuffer(char filename[]);
+void write_output(char output_file[]);
+void fillOutputBuffer(size_t bytes_read);
 
 void error(string msg) 
 {
@@ -28,15 +34,22 @@ void error(string msg)
     exit(1);
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     generate_tree();
 
     /*for (map< string, unsigned char > :: iterator it = unhuff.begin(); it != unhuff.end(); it++) {
         cout << it -> second << " " << it -> first << endl;
     }*/
+    if (argc != 3) {
+        error("Usage: uncompress inputfile outputfile");
+    }
 
+    size_t bytes_read = fillBuffer(argv[1]);
 
+    fillOutputBuffer(bytes_read);
+
+    write_output(argv[2]);
     return 0;
 }
 
@@ -62,6 +75,53 @@ void generate_tree()
     fclose(fp);
 }
 
+int fillBuffer(char filename[])
+{
+    FILE *fp = fopen(filename, "rb");
+    if (fp == NULL) {
+        error("Error opening file");
+    }
+    size_t bytes_read;
+    bytes_read = fread(buffer, sizeof(unsigned char), sizeof(buffer), fp);
+    if (bytes_read == 0) {
+        error("Error reading file");
+    }
+    fclose(fp);
+    return bytes_read;
+}
 
+void fillOutputBuffer(size_t bytes_read)
+{
+    string currstr = "";
+    for (int i = 0; i < bytes_read; i++) {
+        unsigned char curr_byte = buffer[i];
+        for (int pos = 7; pos >= 0; pos--) {
+            unsigned char res = buffer[i] & (1 << pos);
+            if (res == 0) {
+                currstr += "0";
+            } else {
+                currstr += "1";
+            }
+            if (unhuff.find(currstr) != unhuff.end()) {
+                //cout << unhuff[currstr] << endl;
+                output_buffer[output_buffer_size] = unhuff[currstr];
+                output_buffer_size++;
+                currstr = "";
+            }
+        }
+    }
+}
 
+void write_output(char output_file[])
+{
+    FILE *out = fopen(output_file, "wb");
+    if (out == NULL) {
+        error("Error opening output file");
+    }
+    size_t bytes_written = fwrite(output_buffer, sizeof(unsigned char), output_buffer_size, out);
+    if (bytes_written == 0) {
+        error("Error writing to output file");
+    }
+    fclose(out);
+}
 

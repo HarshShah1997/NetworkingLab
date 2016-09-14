@@ -68,7 +68,7 @@ int generate_tree(char filename[])
         int inp;
         unsigned char y;
         char arr[300];
-        fscanf(fp, "%d %s", &inp, arr);
+        fscanf(fp, "%d %s\n", &inp, arr);
         string str (arr);
         y = inp;
         if (y == 0 && str == "0") {

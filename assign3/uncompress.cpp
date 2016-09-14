@@ -1,4 +1,9 @@
-#include <bits/stdc++.h>
+#include <algorithm>
+#include <iostream>
+#include <cstdio>
+#include <queue>
+#include <string>
+#include <map>
 #include <unistd.h>
 #define MAX_SIZE 10000000
 using namespace std;
@@ -23,8 +28,8 @@ unsigned char buffer[MAX_SIZE];
 unsigned char output_buffer[MAX_SIZE];
 int output_buffer_size = 0;
 
-void generate_tree();
-int fillBuffer(char filename[]);
+int generate_tree(char filename[]);
+int fillBuffer(FILE *fp);
 void write_output(char output_file[]);
 void fillOutputBuffer(size_t bytes_read);
 
@@ -36,7 +41,6 @@ void error(string msg)
 
 int main(int argc, char *argv[])
 {
-    generate_tree();
 
     /*for (map< string, unsigned char > :: iterator it = unhuff.begin(); it != unhuff.end(); it++) {
         cout << it -> second << " " << it -> first << endl;
@@ -45,7 +49,7 @@ int main(int argc, char *argv[])
         error("Usage: uncompress inputfile outputfile");
     }
 
-    size_t bytes_read = fillBuffer(argv[1]);
+    size_t bytes_read = generate_tree(argv[1]);
 
     fillOutputBuffer(bytes_read);
 
@@ -53,11 +57,11 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void generate_tree() 
+int generate_tree(char filename[]) 
 {
-    FILE *fp = fopen("tree.txt", "r");
+    FILE *fp = fopen(filename, "rb");
     if (fp == NULL) {
-        error("Error opening tree file");
+        error("Error opening file");
     }
 
     while (1) {
@@ -72,21 +76,18 @@ void generate_tree()
         }
         unhuff[str] = y;
     }
+    size_t bytes_read = fillBuffer(fp);
     fclose(fp);
+    return bytes_read;
 }
 
-int fillBuffer(char filename[])
+int fillBuffer(FILE *fp)
 {
-    FILE *fp = fopen(filename, "rb");
-    if (fp == NULL) {
-        error("Error opening file");
-    }
     size_t bytes_read;
     bytes_read = fread(buffer, sizeof(unsigned char), sizeof(buffer), fp);
     if (bytes_read == 0) {
         error("Error reading file");
     }
-    fclose(fp);
     return bytes_read;
 }
 

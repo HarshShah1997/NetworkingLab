@@ -1,5 +1,11 @@
-#include <bits/stdc++.h>
+#include <algorithm>
+#include <vector>
+#include <map>
+#include <cstdio>
 #include <unistd.h>
+#include <iostream>
+#include <string>
+#include <queue>
 #define MAX_SIZE 10000000
 using namespace std;
 
@@ -26,7 +32,7 @@ void write_tree();
 int fillBuffer(char filename[]);
 void fillOutputBuffer(size_t bytes_read);
 void writeOutput(char filename[]);
-void write_tree();
+void write_tree(FILE *out);
 
 unsigned char buffer[MAX_SIZE];
 unsigned char output_buffer[MAX_SIZE];
@@ -78,8 +84,6 @@ int main(int argc, char *argv[])
     fillOutputBuffer(bytes_read);
 
     writeOutput(argv[2]);
-
-    write_tree();
 
     return 0;
 }
@@ -159,13 +163,13 @@ void writeOutput(char filename[])
     if (out == NULL) {
         error("Error writing to file");
     }
+    write_tree(out);
     fwrite(output_buffer, sizeof(unsigned char), output_buffer_size, out);
     fclose(out);
 }
 
-void write_tree()
+void write_tree(FILE *out)
 {
-    FILE *out = fopen("tree.txt", "w");
     for (int i = 0; i < 256; i++) {
         unsigned char x = i;
         if (huff.find(x) != huff.end()) {
@@ -173,5 +177,4 @@ void write_tree()
         }
     }
     fprintf(out, "%x %s\n", 0, "0");
-    fclose(out);
 }

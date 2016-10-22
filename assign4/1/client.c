@@ -23,7 +23,7 @@ void *recv_message(void *sfd)
         char buffer[256];
         bzero(buffer, 256);
         ssize_t n = recv(sockfd, buffer, sizeof(buffer), 0);
-        if (n < 0) {
+        if (n <= 0) {
             error("ERROR receiving from socket");
         }
         printf("%s\n", buffer);

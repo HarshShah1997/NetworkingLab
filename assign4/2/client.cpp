@@ -29,7 +29,7 @@ void *recv_message_from_server(void *sfd)
         if (n <= 0) {
             error("ERROR receiving from socket");
         }
-        write(fileno(stdout), "<", 1);
+        write(fileno(stdout), "< ", 2);
         write(fileno(stdout), buffer, sizeof(buffer));
     }
 }
@@ -39,8 +39,6 @@ void *send_message_to_server(void *sfd)
     int sockfd = *(int *)sfd;
     while (1) {
         string buffer;
-        //bzero(buffer, sizeof(buffer));
-        //scanf("%s", buffer);
         getline(cin, buffer);
         ssize_t n = send(sockfd, buffer.c_str(), buffer.length(), 0);
         if (n < 0) {
@@ -77,15 +75,7 @@ int main(int argc, char *argv[])
     cin >> name;
     send_message(sockfd, name);
 
-    //while (1) {
-        //string message;
-        //getline(cin, message);
-        //send_message(sockfd, message);
-    //}
-
-
     pthread_t rid, sid;
-
     pthread_create(&rid, NULL, recv_message_from_server, (void *)&sockfd);
     pthread_create(&sid, NULL, send_message_to_server, (void *)&sockfd);
 

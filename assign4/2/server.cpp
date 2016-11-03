@@ -16,6 +16,9 @@ using namespace std;
 map<string, int> nametable;
 
 int setup(int argc, char *argv[]);
+void send_list(int clisockfd);
+void send_to_another_client(int clisockfd, string cliname, string message);
+string ask_name(int clisockfd);
 
 void error(const char *msg) 
 {
@@ -47,9 +50,7 @@ void send_message(int sockfd, string msg)
 void *handle_client(void *sfd)
 {
     int clisockfd = *(int *)sfd;
-    send_message(clisockfd, "Connected, enter your name");
-    string cliname = recv_message(clisockfd);
-    cout << cliname << " connected" << endl;
+    string cliname = ask_name(clisockfd);
     nametable[cliname] = clisockfd;
 
     while (1) {
@@ -59,21 +60,11 @@ void *handle_client(void *sfd)
             nametable.erase(cliname);
             break;
         } else if (message == "list") {
-            send_message(clisockfd, "List of clients:\n");
-            for (map<string, int>::iterator it = nametable.begin(); it != nametable.end(); it++) {
-                send_message(clisockfd, it -> first + "\n");
-            }
+            send_list(clisockfd);
         } else if (message.find(":") == string::npos) {
             send_message(clisockfd, "Invalid command\n");
         } else {
-            string recvname = message.substr(0, message.find(":"));
-            if (nametable.find(recvname) == nametable.end()) {
-                send_message(clisockfd, "No such client\n");
-            } else {
-                int recvsockfd = nametable[recvname];
-                string org_msg = cliname + ":" + message.substr(message.find(":") + 1, string::npos);
-                send_message(recvsockfd, org_msg + "\n");
-            }
+            send_to_another_client(clisockfd, cliname, message);
         }
     }
 }
@@ -97,6 +88,35 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+string ask_name(int clisockfd)
+{
+    send_message(clisockfd, "Connected, enter your name");
+    string cliname = recv_message(clisockfd);
+    cout << cliname << " connected" << endl;
+    return cliname;
+}
+
+void send_to_another_client(int clisockfd, string cliname, string message)
+{
+    string recvname = message.substr(0, message.find(":"));
+    if (nametable.find(recvname) == nametable.end()) {
+        send_message(clisockfd, "No such client\n");
+    } else {
+        int recvsockfd = nametable[recvname];
+        string org_msg = cliname + ":" + message.substr(message.find(":") + 1, string::npos);
+        send_message(recvsockfd, org_msg + "\n");
+    }
+}
+
+
+void send_list(int clisockfd)
+{
+    send_message(clisockfd, "List of clients:\n");
+    for (map<string, int>::iterator it = nametable.begin(); it != nametable.end(); it++) {
+        send_message(clisockfd, it -> first + "\n");
+    }
+}
+
 int setup(int argc, char *argv[])
 {
     signal(SIGCHLD, SIG_IGN);
@@ -105,6 +125,7 @@ int setup(int argc, char *argv[])
     if (argc < 2) {
         error("ERROR no port provided");
     }
+    cout << "Server running on port " << argv[1] << endl;
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         error("ERROR opening socket");
@@ -119,4 +140,6 @@ int setup(int argc, char *argv[])
     }
     return sockfd;
 }
+
+
 

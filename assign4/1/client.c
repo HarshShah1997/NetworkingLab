@@ -47,6 +47,7 @@ void *send_message(void *sfd)
 int main(int argc, char *argv[])
 {
     int sockfd = setup(argc, argv);
+    printf("Connected to server\n");
 
     pthread_t rid, sid;
 

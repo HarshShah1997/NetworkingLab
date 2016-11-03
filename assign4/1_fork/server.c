@@ -57,13 +57,12 @@ int main(int argc, char *argv[])
     }
     printf("Client connected\n");
 
-    pthread_t sid, rid;
-    pthread_create(&rid, NULL, recv_message, (void *)&newsockfd);
-    pthread_create(&sid, NULL, send_message, (void *)&newsockfd);
-
-    pthread_join(rid, NULL);
-    pthread_join(sid, NULL);
-
+    pid_t pid = fork();
+    if (pid == 0) {
+        recv_message((void *)&newsockfd);
+    } else {
+        send_message((void *)&newsockfd);
+    }
     close(sockfd);
     return 0;
 }
@@ -76,7 +75,7 @@ int setup(int argc, char *argv[])
     if (argc < 2) {
         error("ERROR no port provided");
     }
-    printf("Server running on port %s", argv[1]);
+    printf("Server running on port %s\n", argv[1]);
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         error("ERROR opening socket");

@@ -11,9 +11,9 @@ int main()
         string choice;
         cin >> choice;
         if (choice == "generate") {
-        	generateParity();
+            generateParity();
         } else if (choice == "check") {
-           checkParity();
+            checkParity();
         } else if (choice == "exit") {
             break;
         }
@@ -23,10 +23,12 @@ int main()
 
 int countSetBits(string data)
 {
-	int count = 0;
-    for(int i = 0;i < data.length();i ++)
-    	if(data[i] == '1')
-    		count ++;
+    int count = 0;
+    for (int i = 0; i < data.length(); i++) {
+    	if (data[i] == '1') {
+    		count++;
+        }
+    }
     return count;
 }
 
@@ -37,12 +39,13 @@ void generateParity()
     cin >> data;
     int setBits = countSetBits(data);
     string setBit;
-    if(setBits % 2 == 0)
+    if (setBits % 2 == 0) {
     	setBit = "0";
-    else
+    } else {
     	setBit = "1";
+    }
     string generatedString = data + setBit;
-    cout<<generatedString<<endl;
+    cout << generatedString << endl;
 }
 void checkParity() 
 {
@@ -51,8 +54,9 @@ void checkParity()
     cin >> data;
     int setBits = countSetBits(data);
     string setBit;
-    if(setBits % 2 == 0)
-    	cout<<"No Error Detected"<<endl;
-    else
-    	cout<<"Error Detected"<<endl;
+    if (setBits % 2 == 0) {
+    	cout << "No Error Detected" << endl;
+    } else {
+    	cout << "Error Detected" << endl;
+    }
 }

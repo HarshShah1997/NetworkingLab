@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 
 string ask_name(int clisockfd)
 {
-    send_message(clisockfd, "Connected, enter your name");
+    send_message(clisockfd, "Connected, type list for the list of clients\nEnter your name");
     string cliname = recv_message(clisockfd);
     cout << cliname << " connected" << endl;
     return cliname;
